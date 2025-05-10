@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Tareas y Recompensas Pareja</title>
+
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="theme-color" content="#db2777"> <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AppPareja">
+    
+    <link rel="apple-touch-icon" href="images/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/icons/icon-192x192.png"> <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .feedback-message {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 0.375rem; /* rounded-md */
+            text-align: center;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d1fae5; /* Tailwind green-100 */
+            color: #065f46; /* Tailwind green-800 */
+            border: 1px solid #6ee7b7; /* Tailwind green-300 */
+        }
+        .error {
+            background-color: #fee2e2; /* Tailwind red-100 */
+            color: #991b1b; /* Tailwind red-800 */
+            border: 1px solid #fca5a5; /* Tailwind red-300 */
+        }
+        .info { /* Estilo para mensajes informativos o de espera */
+            background-color: #e0f2fe; /* Tailwind sky-100 */
+            color: #075985; /* Tailwind sky-800 */
+            border: 1px solid #7dd3fc; /* Tailwind sky-300 */
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .home-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .home-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .btn-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+        }
+        .savings-list-item {
+            padding: 0.75rem; /* p-3 */
+            background-color: #4b5563; /* slate-600 */
+            border-radius: 0.375rem; /* rounded-md */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .savings-list-item p {
+            margin-bottom: 0.25rem; /* mb-1 */
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-700 text-slate-100 min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <div class="container mx-auto max-w-lg w-full bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10">
+
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500">App Pareja</h1>
+            <p class="text-slate-400 text-sm sm:text-base">¡Organiza, colabora y gana!</p>
+        </header>
+
+        <section id="userSelectionScreen" class="p-6 bg-slate-700 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4 text-pink-400">¿Quiénes Juegan?</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="text" id="userNameInput1" placeholder="Nombre Jugador 1" class="flex-grow p-3 bg-slate-600 border border-slate-500 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none placeholder-slate-400">
+                <input type="text" id="userNameInput2" placeholder="Nombre Jugador 2" class="flex-grow p-3 bg-slate-600 border border-slate-500 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none placeholder-slate-400">
+            </div>
+            <button id="startAppButton" class="mt-6 w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-105">
+                Comenzar / Cargar Datos
+            </button>
+        </section>
+        
+        <div id="feedbackArea" class="my-4"></div>
+
+        <div id="appContainer" class="hidden">
+            
+            <section id="homeScreen" class="p-2 sm:p-6 space-y-6">
+                <div id="homeUserInfo" class="bg-slate-700 p-4 rounded-lg shadow-xl text-center">
+                    <img id="homeUserAvatar" src="https://placehold.co/80x80/f472b6/1e293b?text=:)&font=Inter" alt="Avatar" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-pink-500 object-cover">
+                    <h2 class="text-xl sm:text-2xl font-semibold">Hola, <span id="homeCurrentUserName" class="text-yellow-400"></span>!</h2>
+                    <p class="text-md sm:text-lg">Puntos: <span id="homeCurrentUserPoints" class="font-bold text-yellow-400">0</span></p>
+                    <button id="homeSwitchUserButton" class="mt-3 text-xs sm:text-sm bg-slate-600 hover:bg-slate-500 text-pink-300 py-1 px-3 rounded-md">Cambiar Usuario</button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="home-card bg-red-500/90 p-4 rounded-lg shadow-lg text-center hover:bg-red-600 transition-colors cursor-pointer" id="navigateToMyTasks">
+                        <h3 class="text-lg sm:text-xl font-semibold mb-1">Mis Tareas</h3>
+                        <p class="text-2xl sm:text-3xl font-bold" id="myTasksCount">0</p>
+                        <p class="text-xs sm:text-sm">Pendientes</p>
+                    </div>
+                    <div class="home-card bg-yellow-500/90 p-4 rounded-lg shadow-lg text-center hover:bg-yellow-600 transition-colors cursor-pointer" id="navigateToRewardsSummary">
+                        <h3 class="text-lg sm:text-xl font-semibold mb-1">Recompensas</h3>
+                        <p class="text-2xl sm:text-3xl font-bold" id="availableRewardsCount">0</p>
+                        <p class="text-xs sm:text-sm">Disponibles</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-3 pt-4">
+                    <button id="viewAllTasksButton" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2 transition-colors">
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1V21c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h7.8c.4 0 .8-.2 1.1-.5.3-.3.5.7.5-1.1V5.5L15.5 2z"></path><path d="M15 2v4h4"></path><path d="M10 10h4"></path><path d="M10 14h4"></path><path d="M10 18h2"></path></svg>
+                        Tareas
+                    </button>
+                    <button id="viewRewardsButton" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2 transition-colors">
+                         <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4"></path><path d="M4 10v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10"></path><path d="M12 15v-2.5a1.5 1.5 0 0 0-3 0V15"></path><path d="M12 15h0a1.5 1.5 0 0 1-3 0v0"></path><path d="M10.5 12.5V15"></path><path d="M13.5 12.5V15"></path></svg>
+                        Recompensas
+                    </button>
+                    <button id="viewSavingsButton" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2 transition-colors">
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4"></path><path d="M20.2 7.8s-.9-2.4-2.7-3.9c-1.9-1.5-3.8-2.2-3.8-2.2"></path><path d="M3.8 7.8s.9-2.4 2.7-3.9c1.9-1.5 3.8-2.2 3.8-2.2"></path><path d="M10.2 21.8s-1.1-.7-2.5-2.5c-1.4-1.9-2-3.8-2-3.8"></path><path d="M13.8 21.8s1.1-.7 2.5-2.5c1.4-1.9 2-3.8 2-3.8"></path><path d="M12 18c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4z"></path><path d="m12 12.5 0 .01"></path></svg>
+                        Ahorros
+                    </button>
+                </div>
+            </section>
+
+            <div id="appContent" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6"> 
+                <button id="backToHomeButton" class="md:col-span-2 mb-6 w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                    Volver al Inicio
+                </button>
+
+                <section id="tasksSection" class="p-6 bg-slate-700 rounded-lg shadow-lg hidden">
+                    <h2 class="text-2xl font-semibold mb-6 text-red-400 border-b-2 border-red-400 pb-2 flex items-center gap-2">
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        Tareas
+                    </h2>
+                    <form id="taskForm" class="mb-6 space-y-4">
+                        <div>
+                            <label for="taskName" class="block text-sm font-medium text-slate-300">Nombre de la Tarea:</label>
+                            <input type="text" id="taskName" required class="mt-1 block w-full p-3 bg-slate-600 border border-slate-500 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none placeholder-slate-400">
+                        </div>
+                        <div>
+                            <label for="taskPoints" class="block text-sm font-medium text-slate-300">Puntos:</label>
+                            <input type="number" id="taskPoints" min="1" required class="mt-1 block w-full p-3 bg-slate-600 border border-slate-500 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none placeholder-slate-400">
+                        </div>
+                        <div>
+                            <label for="taskAssignTo" class="block text-sm font-medium text-slate-300">Asignar a:</label>
+                            <select id="taskAssignTo" class="mt-1 block w-full p-3 bg-slate-600 border border-slate-500 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none">
+                            </select>
+                        </div>
+                        <div>
+                            <label for="taskPeriodicity" class="block text-sm font-medium text-slate-300">Periodicidad:</label>
+                            <select id="taskPeriodicity" class="mt-1 block w-full p-3 bg-slate-600 border border-slate-500 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none">
+                                <option value="unica">Única vez</option>
+                                <option value="diaria">Diaria</option>
+                                <option value="semanal">Semanal</option>
+                                <option value="mensual">Mensual</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-105 flex items-center justify-center gap-2">
+                            <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Agregar Tarea
+                        </button>
+                    </form>
+                    <h3 class="text-xl font-medium mb-3 text-slate-300">Lista de Tareas Pendientes:</h3>
+                    <ul id="taskList" class="space-y-3 max-h-96 overflow-y-auto pr-2"></ul>
+                </section>
+
+                <section id="rewardsSection" class="p-6 bg-slate-700 rounded-lg shadow-lg hidden">
+                    <h2 class="text-2xl font-semibold mb-6 text-yellow-400 border-b-2 border-yellow-400 pb-2 flex items-center gap-2">
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4"></path><path d="M4 10v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10"></path><path d="M12 15v-2.5a1.5 1.5 0 0 0-3 0V15"></path><path d="M12 15h0a1.5 1.5 0 0 1-3 0v0"></path><path d="M10.5 12.5V15"></path><path d="M13.5 12.5V15"></path></svg>
+                        Recompensas
+                    </h2>
+                    <form id="rewardForm" class="mb-6 space-y-4">
+                        <div>
+                            <label for="rewardName" class="block text-sm font-medium text-slate-300">Nombre de la Recompensa:</label>
+                            <input type="text" id="rewardName" required class="mt-1 block w-full p-3 bg-slate-600 border border-slate-500 rounded-md shadow-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none placeholder-slate-400">
+                        </div>
+                        <div>
+                            <label for="rewardCost" class="block text-sm font-medium text-slate-300">Costo en Puntos:</label>
+                            <input type="number" id="rewardCost" min="1" required class="mt-1 block w-full p-3 bg-slate-600 border border-slate-500 rounded-md shadow-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none placeholder-slate-400">
+                        </div>
+                        <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-105 flex items-center justify-center gap-2">
+                            <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Agregar Recompensa
+                        </button>
+                    </form>
+                    <h3 class="text-xl font-medium mb-3 text-slate-300">Recompensas Disponibles:</h3>
+                    <ul id="rewardList" class="space-y-3 max-h-96 overflow-y-auto pr-2"></ul>
+                </section>
+
+                <section id="savingsSection" class="p-6 bg-slate-700 rounded-lg shadow-lg hidden">
+                    <h2 class="text-2xl font-semibold mb-6 text-green-400 border-b-2 border-green-400 pb-2 flex items-center gap-2">
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4"></path><path d="M20.2 7.8s-.9-2.4-2.7-3.9c-1.9-1.5-3.8-2.2-3.8-2.2"></path><path d="M3.8 7.8s.9-2.4 2.7-3.9c1.9-1.5 3.8-2.2 3.8-2.2"></path><path d="M10.2 21.8s-1.1-.7-2.5-2.5c-1.4-1.9-2-3.8-2-3.8"></path><path d="M13.8 21.8s1.1-.7 2.5-2.5c1.4-1.9 2-3.8 2-3.8"></path><path d="M12 18c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4z"></path><path d="m12 12.5 0 .01"></path></svg>
+                        Frasco de Ahorro
+                    </h2>
+                    
+                    <div class="mb-8 text-center">
+                        <h3 class="text-xl font-medium text-slate-300">Ahorro Neto Total:</h3>
+                        <p class="text-4xl font-bold text-green-300">$<span id="totalNetSavings">0.00</span></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="space-y-6">
+                            <div>
+                                <h4 class="text-lg font-semibold mb-3 text-sky-300">Realizar Contribución</h4>
+                                <form id="savingsContributionForm" class="space-y-4">
+                                    <div>
+                                        <label for="savingsAmount" class="block text-sm font-medium text-slate-300">Monto a Aportar:</label>
+                                        <input type="number" id="savingsAmount" min="0.01" step="0.01" required class="mt-1 block w-full p-3 bg-slate-600 border border-slate-500 rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none placeholder-slate-400">
+                                    </div>
+                                    <div>
+                                        <label for="savingsUser" class="block text-sm font-medium text-slate-300">¿Quién aporta?</label>
+                                        <select id="savingsUser" class="mt-1 block w-full p-3 bg-slate-600 border border-slate-500 rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md flex items-center justify-center gap-2">
+                                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                        Agregar Aporte
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div>
+                                <h4 class="text-lg font-semibold mb-3 text-orange-400">Proponer Gasto Compartido</h4>
+                                <form id="expenseForm" class="space-y-4">
+                                    <div>
+                                        <label for="expenseDescription" class="block text-sm font-medium text-slate-300">Descripción del Gasto:</label>
+                                        <input type="text" id="expenseDescription" required class="mt-1 block w-full p-3 bg-slate-600 border border-slate-500 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none placeholder-slate-400">
+                                    </div>
+                                    <div>
+                                        <label for="expenseAmount" class="block text-sm font-medium text-slate-300">Monto del Gasto:</label>
+                                        <input type="number" id="expenseAmount" min="0.01" step="0.01" required class="mt-1 block w-full p-3 bg-slate-600 border border-slate-500 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none placeholder-slate-400">
+                                    </div>
+                                    <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md flex items-center justify-center gap-2">
+                                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4"></path></svg>
+                                        Proponer Gasto
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div>
+                                <h4 class="text-lg font-semibold mb-3 text-yellow-300">Gastos Pendientes de Mi Aprobación</h4>
+                                <ul id="pendingExpensesListUl" class="space-y-2 max-h-60 overflow-y-auto pr-2 text-sm"></ul>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-semibold mb-3 text-slate-300">Historial de Gastos Aprobados</h4>
+                                <ul id="approvedExpensesLogUl" class="space-y-2 max-h-60 overflow-y-auto pr-2 text-sm"></ul>
+                            </div>
+                             <div>
+                                <h4 class="text-lg font-semibold mb-3 text-slate-300">Historial de Contribuciones</h4>
+                                <ul id="savingsLogUl" class="space-y-2 max-h-60 overflow-y-auto pr-2 text-sm"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div> 
+        </div> 
+    </div>
+
+    <script>
+        // Script de Registro del Service Worker (debe estar en index.html)
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+              .then((registration) => {
+                console.log('Service Worker registrado con éxito:', registration);
+              })
+              .catch((error) => {
+                console.log('Error al registrar el Service Worker:', error);
+              });
+          });
+        }
+
+        // Constantes para las claves de localStorage
+        const USERS_STORAGE_KEY = 'coupleApp.users';
+        const TASKS_STORAGE_KEY = 'coupleApp.tasks';
+        const REWARDS_STORAGE_KEY = 'coupleApp.rewards';
+        const CONTRIBUTIONS_STORAGE_KEY = 'coupleApp.contributions';
+        const EXPENSES_STORAGE_KEY = 'coupleApp.expenses';
+        const CURRENT_USER_ID_KEY = 'coupleApp.currentUserId';
+
+        // Estado de la aplicación
+        let users = [];
+        let tasks = [];
+        let rewards = [];
+        let contributions = [];
+        let expenses = [];
+        let currentUserId = null;
+
+        // --- Selectores del DOM (sin cambios) ---
+        const userSelectionScreen = document.getElementById('userSelectionScreen');
+        const userNameInput1 = document.getElementById('userNameInput1');
+        const userNameInput2 = document.getElementById('userNameInput2');
+        const startAppButton = document.getElementById('startAppButton');
+        const appContainer = document.getElementById('appContainer');
+        const homeScreen = document.getElementById('homeScreen');
+        const homeUserAvatar = document.getElementById('homeUserAvatar');
+        const homeCurrentUserNameSpan = document.getElementById('homeCurrentUserName');
+        const homeCurrentUserPointsSpan = document.getElementById('homeCurrentUserPoints');
+        const homeSwitchUserButton = document.getElementById('homeSwitchUserButton');
+        const myTasksCountSpan = document.getElementById('myTasksCount');
+        const availableRewardsCountSpan = document.getElementById('availableRewardsCount');
+        const navigateToMyTasks = document.getElementById('navigateToMyTasks');
+        const navigateToRewardsSummary = document.getElementById('navigateToRewardsSummary');
+        const viewAllTasksButton = document.getElementById('viewAllTasksButton');
+        const viewRewardsButton = document.getElementById('viewRewardsButton');
+        const viewSavingsButton = document.getElementById('viewSavingsButton');
+        const appContentDiv = document.getElementById('appContent'); 
+        const backToHomeButton = document.getElementById('backToHomeButton');
+        const feedbackArea = document.getElementById('feedbackArea');
+        const tasksSection = document.getElementById('tasksSection');
+        const taskForm = document.getElementById('taskForm');
+        const taskNameInput = document.getElementById('taskName');
+        const taskPointsInput = document.getElementById('taskPoints');
+        const taskAssignToSelect = document.getElementById('taskAssignTo');
+        const taskPeriodicitySelect = document.getElementById('taskPeriodicity');
+        const taskListUl = document.getElementById('taskList');
+        const rewardsSection = document.getElementById('rewardsSection');
+        const rewardForm = document.getElementById('rewardForm');
+        const rewardNameInput = document.getElementById('rewardName');
+        const rewardCostInput = document.getElementById('rewardCost');
+        const rewardListUl = document.getElementById('rewardList');
+        const savingsSection = document.getElementById('savingsSection');
+        const totalNetSavingsSpan = document.getElementById('totalNetSavings');
+        const savingsContributionForm = document.getElementById('savingsContributionForm');
+        const savingsAmountInput = document.getElementById('savingsAmount');
+        const savingsUserSelect = document.getElementById('savingsUser');
+        const savingsLogUl = document.getElementById('savingsLogUl');
+        const expenseForm = document.getElementById('expenseForm');
+        const expenseDescriptionInput = document.getElementById('expenseDescription');
+        const expenseAmountInput = document.getElementById('expenseAmount');
+        const pendingExpensesListUl = document.getElementById('pendingExpensesListUl');
+        const approvedExpensesLogUl = document.getElementById('approvedExpensesLogUl');
+
+        // --- Lógica de Navegación y UI (sin cambios) ---
+        function showUserSelectionScreen() {
+            userSelectionScreen.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+        }
+
+        function showHomeScreen() {
+            userSelectionScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            homeScreen.classList.remove('hidden');
+            homeScreen.classList.add('fade-in');
+            appContentDiv.classList.add('hidden'); 
+            backToHomeButton.classList.add('hidden');
+            updateHomeScreenData();
+        }
+
+        function showSection(sectionElement) {
+            homeScreen.classList.add('hidden');
+            appContentDiv.classList.remove('hidden'); 
+
+            tasksSection.classList.add('hidden');
+            rewardsSection.classList.add('hidden');
+            savingsSection.classList.add('hidden');
+
+            tasksSection.classList.remove('md:col-span-1', 'md:col-span-2');
+            rewardsSection.classList.remove('md:col-span-1', 'md:col-span-2');
+            savingsSection.classList.remove('md:col-span-1', 'md:col-span-2');
+            
+            sectionElement.classList.remove('hidden');
+            sectionElement.classList.add('fade-in');
+            sectionElement.classList.add('md:col-span-2'); 
+
+            backToHomeButton.classList.remove('hidden'); 
+        }
+        
+        function updateHomeScreenData() {
+            if (!currentUserId || users.length === 0) return;
+            const user = users.find(u => u.id === currentUserId);
+            if (user) {
+                homeCurrentUserNameSpan.textContent = user.name;
+                homeCurrentUserPointsSpan.textContent = user.points;
+                const avatarText = user.name.substring(0,2).toUpperCase();
+                homeUserAvatar.src = `https://placehold.co/80x80/${user.id === 'user1' ? 'f472b6' : '60a5fa'}/1e293b?text=${avatarText}&font=Inter`;
+                const userTasks = tasks.filter(task => !task.completed && (task.assignedTo === currentUserId || task.assignedTo === 'ambos'));
+                myTasksCountSpan.textContent = userTasks.length;
+                availableRewardsCountSpan.textContent = rewards.length;
+            }
+        }
+
+        // --- Lógica de Datos (localStorage, inicialización - sin cambios) ---
+        function loadDataFromLocalStorage() {
+            const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+            if (storedUsers) users = JSON.parse(storedUsers);
+            const storedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
+            if (storedTasks) tasks = JSON.parse(storedTasks);
+            const storedRewards = localStorage.getItem(REWARDS_STORAGE_KEY);
+            if (storedRewards) rewards = JSON.parse(storedRewards);
+            const storedContributions = localStorage.getItem(CONTRIBUTIONS_STORAGE_KEY);
+            if (storedContributions) contributions = JSON.parse(storedContributions);
+            const storedExpenses = localStorage.getItem(EXPENSES_STORAGE_KEY);
+            if (storedExpenses) expenses = JSON.parse(storedExpenses);
+            const storedCurrentUserId = localStorage.getItem(CURRENT_USER_ID_KEY);
+            if (storedCurrentUserId) currentUserId = storedCurrentUserId;
+            if (users.length > 0) userNameInput1.value = users[0]?.name || '';
+            if (users.length > 1) userNameInput2.value = users[1]?.name || '';
+        }
+
+        function saveDataToLocalStorage() {
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+            localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+            localStorage.setItem(REWARDS_STORAGE_KEY, JSON.stringify(rewards));
+            localStorage.setItem(CONTRIBUTIONS_STORAGE_KEY, JSON.stringify(contributions));
+            localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+            localStorage.setItem(CURRENT_USER_ID_KEY, currentUserId);
+        }
+
+        function initializeUsers() {
+            const name1 = userNameInput1.value.trim();
+            const name2 = userNameInput2.value.trim();
+            if (!name1 || !name2) {
+                showFeedback("Por favor, ingresa los nombres de ambos jugadores.", "error");
+                return false;
+            }
+            const user1Exists = users.find(u => u.id === 'user1');
+            const user2Exists = users.find(u => u.id === 'user2');
+            if (!user1Exists || !user2Exists || user1Exists.name !== name1 || user2Exists.name !== name2) {
+                users = [
+                    { id: 'user1', name: name1, points: user1Exists && user1Exists.name === name1 ? user1Exists.points : 0, avatar: 'avatar1.png' },
+                    { id: 'user2', name: name2, points: user2Exists && user2Exists.name === name2 ? user2Exists.points : 0, avatar: 'avatar2.png' }
+                ];
+                if (!currentUserId || !users.find(u => u.id === currentUserId && u.name === (currentUserId === 'user1' ? name1 : name2))) {
+                    currentUserId = users[0].id; 
+                }
+                showFeedback(`Jugadores '${name1}' y '${name2}' configurados.`, "success");
+            } else {
+                if (!currentUserId || !users.find(u => u.id === currentUserId)) {
+                    currentUserId = users[0].id;
+                }
+                showFeedback(`Datos cargados para '${name1}' y '${name2}'.`, "success");
+            }
+            saveDataToLocalStorage();
+            return true;
+        }
+        
+        function showFeedback(message, type = 'success') {
+            feedbackArea.innerHTML = `<div class="feedback-message ${type} fade-in">${message}</div>`;
+            setTimeout(() => { feedbackArea.innerHTML = ''; }, 3000);
+        }
+
+        function populateUserSelects() {
+            if (users.length < 2) return;
+            const optionsHtml = users.map(user => `<option value="${user.id}">${user.name}</option>`).join('');
+            taskAssignToSelect.innerHTML = `<option value="ambos">Ambos (Disponible)</option>` + optionsHtml;
+            savingsUserSelect.innerHTML = optionsHtml;
+        }
+
+        // --- Renderizado de Listas (Tareas, Recompensas - sin cambios) ---
+        function renderTasks() {
+            taskListUl.innerHTML = ''; 
+            const currentUser = users.find(u => u.id === currentUserId);
+            if (!currentUser) return;
+            const pendingTasks = tasks.filter(task => !task.completed);
+            if (pendingTasks.length === 0) {
+                taskListUl.innerHTML = '<li class="text-slate-400 italic p-4 text-center">No hay tareas pendientes.</li>';
+                updateHomeScreenData(); return;
+            }
+            pendingTasks.forEach(task => {
+                const assignedUser = users.find(u => u.id === task.assignedTo);
+                const assignedName = assignedUser ? assignedUser.name : (task.assignedTo === 'ambos' ? 'Disponible' : 'N/A');
+                const li = document.createElement('li');
+                li.className = 'p-3 sm:p-4 bg-slate-600 rounded-lg shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 hover:bg-slate-500/80 transition-colors duration-150 fade-in';
+                li.innerHTML = `
+                    <div class="flex-grow">
+                        <h4 class="font-semibold text-md sm:text-lg text-slate-100">${task.name} <span class="ml-2 text-xs px-2 py-0.5 bg-red-500 text-white rounded-full align-middle">${task.points} pts</span></h4>
+                        <p class="text-xs sm:text-sm text-slate-300">Asignada a: ${assignedName} | Periodicidad: ${task.periodicity}</p>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2 sm:mt-0 self-end sm:self-center">
+                        ${ (task.assignedTo === 'ambos' || task.assignedTo === currentUserId) ? 
+                        `<button data-task-id="${task.id}" class="complete-task-btn bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-2 px-3 rounded-md transition transform hover:scale-105 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>Completar</button>` :
+                        `<span class="text-xs text-slate-400 italic">Asignada a ${assignedName}</span>`}
+                        <button data-task-id="${task.id}" class="delete-task-btn bg-red-700 hover:bg-red-800 text-white text-xs font-bold py-2 px-3 rounded-md transition transform hover:scale-105 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                    </div>`;
+                taskListUl.appendChild(li);
+            });
+            updateHomeScreenData();
+        }
+
+        function renderRewards() {
+            rewardListUl.innerHTML = '';
+            const currentUser = users.find(u => u.id === currentUserId);
+            if (!currentUser) return;
+            if (rewards.length === 0) {
+                rewardListUl.innerHTML = '<li class="text-slate-400 italic p-4 text-center">No hay recompensas definidas.</li>';
+                updateHomeScreenData(); return;
+            }
+            rewards.forEach(reward => {
+                const li = document.createElement('li');
+                li.className = 'p-3 sm:p-4 bg-slate-600 rounded-lg shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 hover:bg-slate-500/80 transition-colors duration-150 fade-in';
+                const canAfford = currentUser.points >= reward.cost;
+                li.innerHTML = `
+                    <div class="flex-grow">
+                        <h4 class="font-semibold text-md sm:text-lg text-slate-100">${reward.name}</h4>
+                        <p class="text-sm text-yellow-300">Costo: ${reward.cost} puntos</p>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2 sm:mt-0 self-end sm:self-center">
+                    ${canAfford ? `<button data-reward-id="${reward.id}" class="redeem-reward-btn bg-yellow-500 hover:bg-yellow-600 text-slate-900 text-xs font-bold py-2 px-3 rounded-md transition transform hover:scale-105 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4"></path><path d="M4 10v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10"></path><path d="M12 15v-2.5a1.5 1.5 0 0 0-3 0V15"></path><path d="M12 15h0a1.5 1.5 0 0 1-3 0v0"></path><path d="M10.5 12.5V15"></path><path d="M13.5 12.5V15"></path></svg>Canjear</button>` : `<span class="text-xs text-red-400 italic">Puntos insuficientes</span>`}
+                    <button data-reward-id="${reward.id}" class="delete-reward-btn bg-red-700 hover:bg-red-800 text-white text-xs font-bold py-2 px-3 rounded-md transition transform hover:scale-105 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                    </div>`;
+                rewardListUl.appendChild(li);
+            });
+            updateHomeScreenData();
+        }
+
+        // --- Lógica de Ahorros y Gastos (sin cambios) ---
+        function renderSavingsSection() {
+            const totalContributions = contributions.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+            const totalApprovedExpenses = expenses.filter(exp => exp.status === 'approved').reduce((sum, item) => sum + parseFloat(item.amount), 0);
+            const netSavings = totalContributions - totalApprovedExpenses;
+            totalNetSavingsSpan.textContent = netSavings.toFixed(2);
+
+            savingsLogUl.innerHTML = '';
+            if (contributions.length === 0) {
+                savingsLogUl.innerHTML = '<li class="text-slate-400 italic p-2 text-center">No hay aportes.</li>';
+            } else {
+                contributions.slice().reverse().forEach(item => {
+                    const user = users.find(u => u.id === item.userId);
+                    const li = document.createElement('li');
+                    li.className = 'text-slate-300 fade-in px-2 py-1 border-b border-slate-600 last:border-b-0';
+                    li.textContent = `${new Date(item.date).toLocaleDateString()} - ${user ? user.name : 'N/A'} aportó: $${parseFloat(item.amount).toFixed(2)}`;
+                    savingsLogUl.appendChild(li);
+                });
+            }
+
+            pendingExpensesListUl.innerHTML = '';
+            const otherUserId = users.find(u => u.id !== currentUserId)?.id;
+            const pendingForMyApproval = expenses.filter(exp => exp.status === 'pending' && exp.requestedBy !== currentUserId && (!exp.approvals || !exp.approvals[currentUserId]));
+            if (pendingForMyApproval.length === 0) {
+                pendingExpensesListUl.innerHTML = '<li class="text-slate-400 italic p-2 text-center">Nada pendiente de tu aprobación.</li>';
+            } else {
+                pendingForMyApproval.forEach(exp => {
+                    const requester = users.find(u => u.id === exp.requestedBy);
+                    const li = document.createElement('li');
+                    li.className = 'savings-list-item bg-yellow-600/30 border border-yellow-500';
+                    li.innerHTML = `
+                        <p class="font-semibold">${exp.description} - $${parseFloat(exp.amount).toFixed(2)}</p>
+                        <p class="text-xs">Propuesto por: ${requester ? requester.name : 'N/A'} el ${new Date(exp.date).toLocaleDateString()}</p>
+                        <button data-expense-id="${exp.id}" class="approve-expense-btn mt-2 w-full bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 px-3 rounded-md transition transform hover:scale-105">Aprobar Gasto</button>
+                    `;
+                    pendingExpensesListUl.appendChild(li);
+                });
+            }
+            
+            approvedExpensesLogUl.innerHTML = '';
+            const approvedExpenses = expenses.filter(exp => exp.status === 'approved');
+            if (approvedExpenses.length === 0) {
+                approvedExpensesLogUl.innerHTML = '<li class="text-slate-400 italic p-2 text-center">No hay gastos aprobados.</li>';
+            } else {
+                approvedExpenses.slice().reverse().forEach(exp => {
+                    const li = document.createElement('li');
+                    li.className = 'text-slate-300 fade-in px-2 py-1 border-b border-slate-600 last:border-b-0';
+                    li.textContent = `${new Date(exp.date).toLocaleDateString()} - ${exp.description}: $${parseFloat(exp.amount).toFixed(2)} (Aprobado)`;
+                    approvedExpensesLogUl.appendChild(li);
+                });
+            }
+        }
+
+        function renderAll() {
+            renderTasks();
+            renderRewards();
+            renderSavingsSection();
+            updateHomeScreenData();
+        }
+
+        // --- Lógica de Eventos (sin cambios) ---
+        startAppButton.addEventListener('click', () => {
+            if (initializeUsers()) {
+                populateUserSelects(); showHomeScreen(); renderAll();
+                userNameInput1.disabled = true; userNameInput2.disabled = true;
+                startAppButton.textContent = "Datos Cargados";
+            }
+        });
+        homeSwitchUserButton.addEventListener('click', () => {
+            if (users.length < 2) return;
+            currentUserId = (currentUserId === users[0].id) ? users[1].id : users[0].id;
+            saveDataToLocalStorage(); updateHomeScreenData(); renderAll();
+            showFeedback(`Usuario cambiado a: ${users.find(u => u.id === currentUserId).name}`, "success");
+        });
+        navigateToMyTasks.addEventListener('click', () => showSection(tasksSection));
+        navigateToRewardsSummary.addEventListener('click', () => showSection(rewardsSection));
+        viewAllTasksButton.addEventListener('click', () => showSection(tasksSection));
+        viewRewardsButton.addEventListener('click', () => showSection(rewardsSection));
+        viewSavingsButton.addEventListener('click', () => { showSection(savingsSection); renderSavingsSection(); });
+        backToHomeButton.addEventListener('click', showHomeScreen);
+        taskForm.addEventListener('submit', (e) => { 
+            e.preventDefault(); if (!currentUserId) { showFeedback("Error: No hay usuario activo.", "error"); return; }
+            const name = taskNameInput.value.trim(); const points = parseInt(taskPointsInput.value);
+            const assignedTo = taskAssignToSelect.value; const periodicity = taskPeriodicitySelect.value;
+            if (name && points > 0 && assignedTo) {
+                tasks.push({ id: 'task_' + Date.now(), name, points, assignedTo, periodicity, completed: false, createdAt: new Date().toISOString() });
+                saveDataToLocalStorage(); renderTasks(); taskForm.reset(); showFeedback("Tarea agregada.", "success");
+            } else { showFeedback("Completa todos los campos de la tarea.", "error"); }
+        });
+        taskListUl.addEventListener('click', (e) => { 
+            if (!currentUserId) return; const user = users.find(u => u.id === currentUserId); if (!user) return;
+            const completeButton = e.target.closest('.complete-task-btn'); const deleteButton = e.target.closest('.delete-task-btn');
+            if (completeButton) {
+                const taskId = completeButton.dataset.taskId; const taskIndex = tasks.findIndex(t => t.id === taskId);
+                if (taskIndex > -1) {
+                    const task = tasks[taskIndex];
+                    if (task.assignedTo === currentUserId || task.assignedTo === 'ambos') {
+                        user.points += task.points;
+                        if (task.periodicity !== 'unica') { tasks.push({ ...task, id: 'task_' + Date.now(), completed: false }); }
+                        tasks.splice(taskIndex, 1);
+                        saveDataToLocalStorage(); renderTasks(); updateHomeScreenData(); showFeedback(`Tarea '${task.name}' completada! +${task.points} pts.`, "success");
+                    } else { showFeedback("Esta tarea no está asignada a ti.", "error"); }
+                }
+            } else if (deleteButton) {
+                const taskId = deleteButton.dataset.taskId; tasks = tasks.filter(t => t.id !== taskId);
+                saveDataToLocalStorage(); renderTasks(); showFeedback("Tarea eliminada.", "success");
+            }
+        });
+        rewardForm.addEventListener('submit', (e) => { 
+            e.preventDefault(); if (!currentUserId) { showFeedback("Error: No hay usuario activo.", "error"); return; }
+            const name = rewardNameInput.value.trim(); const cost = parseInt(rewardCostInput.value);
+            if (name && cost > 0) {
+                rewards.push({ id: 'reward_' + Date.now(), name, cost });
+                saveDataToLocalStorage(); renderRewards(); rewardForm.reset(); showFeedback("Recompensa agregada.", "success");
+            } else { showFeedback("Completa los campos de la recompensa.", "error"); }
+        });
+        rewardListUl.addEventListener('click', (e) => { 
+            if (!currentUserId) return; const user = users.find(u => u.id === currentUserId); if (!user) return;
+            const redeemButton = e.target.closest('.redeem-reward-btn'); const deleteButton = e.target.closest('.delete-reward-btn');
+            if (redeemButton) {
+                const rewardId = redeemButton.dataset.rewardId; const reward = rewards.find(r => r.id === rewardId);
+                if (reward) {
+                    if (user.points >= reward.cost) {
+                        user.points -= reward.cost; saveDataToLocalStorage(); renderRewards(); updateHomeScreenData(); showFeedback(`'${reward.name}' canjeada!`, "success");
+                    } else { showFeedback("Puntos insuficientes.", "error"); }
+                }
+            } else if (deleteButton) {
+                const rewardId = deleteButton.dataset.rewardId; rewards = rewards.filter(r => r.id !== rewardId);
+                saveDataToLocalStorage(); renderRewards(); showFeedback("Recompensa eliminada.", "success");
+            }
+        });
+        savingsContributionForm.addEventListener('submit', (e) => {
+            e.preventDefault(); const amount = parseFloat(savingsAmountInput.value); const userId = savingsUserSelect.value;
+            if (amount > 0 && userId) {
+                contributions.push({ id: 'contrib_' + Date.now(), userId, amount, date: new Date().toISOString() });
+                saveDataToLocalStorage(); renderSavingsSection(); savingsContributionForm.reset(); showFeedback("Aporte al ahorro registrado.", "success");
+            } else { showFeedback("Monto y usuario son requeridos para el aporte.", "error"); }
+        });
+        expenseForm.addEventListener('submit', (e) => {
+            e.preventDefault(); if (!currentUserId || users.length < 2) { showFeedback("Se requieren ambos usuarios para proponer gastos.", "error"); return; }
+            const description = expenseDescriptionInput.value.trim(); const amount = parseFloat(expenseAmountInput.value);
+            if (description && amount > 0) {
+                const otherUserId = users.find(u => u.id !== currentUserId)?.id;
+                if (!otherUserId) { showFeedback("Error al identificar al otro usuario.", "error"); return; }
+                const newExpense = {
+                    id: 'expense_' + Date.now(), description, amount, date: new Date().toISOString(), requestedBy: currentUserId, status: 'pending',
+                    approvals: { [currentUserId]: true, [otherUserId]: false }
+                };
+                expenses.push(newExpense); saveDataToLocalStorage(); renderSavingsSection(); expenseForm.reset(); showFeedback("Propuesta de gasto enviada para aprobación.", "info");
+            } else { showFeedback("Descripción y monto son requeridos para el gasto.", "error"); }
+        });
+        pendingExpensesListUl.addEventListener('click', (e) => {
+            if (!currentUserId) return; const approveButton = e.target.closest('.approve-expense-btn');
+            if (approveButton) {
+                const expenseId = approveButton.dataset.expenseId; const expenseIndex = expenses.findIndex(exp => exp.id === expenseId);
+                if (expenseIndex > -1) {
+                    const expense = expenses[expenseIndex];
+                    if (expense.requestedBy !== currentUserId && !expense.approvals[currentUserId]) {
+                        expense.approvals[currentUserId] = true;
+                        const allApproved = Object.values(expense.approvals).every(approved => approved === true) && Object.keys(expense.approvals).length === 2;
+                        if (allApproved) {
+                            expense.status = 'approved'; showFeedback(`Gasto "${expense.description}" aprobado por ambos.`, "success");
+                        } else { showFeedback(`Has aprobado el gasto "${expense.description}". Esperando al otro usuario.`, "info"); }
+                        saveDataToLocalStorage(); renderSavingsSection();
+                    }
+                }
+            }
+        });
+
+        // --- Inicialización de la App ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDataFromLocalStorage();
+            if (users.length >= 2 && currentUserId && users.find(u => u.id === currentUserId)) {
+                userNameInput1.value = users[0].name; userNameInput2.value = users[1].name;
+                userNameInput1.disabled = true; userNameInput2.disabled = true;
+                startAppButton.textContent = "Datos Cargados";
+                populateUserSelects(); showHomeScreen(); renderAll();
+            } else {
+                showUserSelectionScreen();
+            }
+        });
+    </script>
+</body>
+</html>
